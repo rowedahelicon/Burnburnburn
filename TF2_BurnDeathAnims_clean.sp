@@ -6,7 +6,7 @@
 
 #pragma semicolon 1
 
-#define PLUGIN_VERSION "1.1"
+#define PLUGIN_VERSION "1.3"
 
 new Handle:burnAnim;
 new Handle:sillyDeaths;
@@ -63,6 +63,11 @@ public OnPluginStart()
 	sillyDeaths = CreateConVar("sm_sillydeaths", "1", "Enables death anims for the scout and the demo.", FCVAR_NONE, true, 0.0, true, 1.0);
 	cvar_burnAnimChance = CreateConVar("sm_burnanim_chance", "1.0", "Chance of animation to play on death (0.0 - 1.0)", FCVAR_PLUGIN);
 	HookEvent("player_death", Event_PlayerDeath, EventHookMode_Pre);
+}
+
+public OnMapStart() {
+
+	PrecacheGeneric("particles/burningplayer.pcf", true);
 }
 
 //-----------------------------------------------------------------------------
@@ -170,7 +175,7 @@ public AttachNewPlayerModel(client, g_BurnAnim)
 		g_ClientAnimEntity[client] = model;
 		
 		if (TE_SetupTFParticle("burningplayer_corpse", pos, _, _, model, 3, 0, false))
-		TE_SendToAll(0.0); //See note at bottom
+		TE_SendToAll(0.0); //See note at bottom	
 		
 		CreateTimer(g_AnimationTimes[TF2_GetPlayerClass(client)][0]-0.4, createNewRagdoll, client);
 		
@@ -180,10 +185,9 @@ public AttachNewPlayerModel(client, g_BurnAnim)
 public Action:createNewRagdoll(Handle:timer, any:client)
 {
 	new vteam = GetClientTeam(client);
-	new vclass = int:TF2_GetPlayerClass(client);
+	new vclass = view_as<int>(TF2_GetPlayerClass(client));
 	decl Ent;
 	Ent = CreateEntityByName("tf_ragdoll");
-	
 
 	new Float:Vel[3];
 	Vel[0] = -18000.552734;
@@ -192,8 +196,6 @@ public Action:createNewRagdoll(Handle:timer, any:client)
 	
 	SetEntPropVector(Ent, Prop_Send, "m_vecRagdollVelocity", Vel);
 	SetEntPropVector(Ent, Prop_Send, "m_vecForce", Vel);
-
-
 
 	decl Float:ClientOrigin[3];
 	
@@ -295,6 +297,7 @@ stock bool:TE_SetupTFParticle(String:Name[],
 	TE_WriteFloat("m_vecStart[2]", start[2]);
 	TE_WriteVector("m_vecAngles", angles);
 	TE_WriteNum("m_iParticleSystemIndex", stridx);
+	
 	if (entindex != -1)
 	{
 		TE_WriteNum("entindex", entindex);
@@ -305,7 +308,7 @@ stock bool:TE_SetupTFParticle(String:Name[],
 	}
 	if (attachpoint != -1)
 	{
-		TE_WriteNum("m_iAttachmentPointIndex", attachpoint);
+		TE_WriteNum("m_iAttachmentPointIndex", 1);
 	}
 	TE_WriteNum("m_bResetParticles", resetParticles ? 1 : 0);
 	return true;
