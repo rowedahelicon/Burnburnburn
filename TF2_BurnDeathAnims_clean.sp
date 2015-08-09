@@ -6,7 +6,7 @@
 
 #pragma semicolon 1
 
-#define PLUGIN_VERSION "1.3"
+#define PLUGIN_VERSION "1.4"
 
 new Handle:burnAnim;
 new Handle:sillyDeaths;
@@ -27,6 +27,8 @@ new const String:g_Animations[][] = {
 	"primary_death_burning",
 	"PRIMARY_death_burning"
 };
+
+new isMVM = true;
 
 //These values are used mainly to time when the final ragdoll will be made.
 //They can be adjusted to provide a cleaner transition should a better one not be possible.
@@ -67,7 +69,8 @@ public OnPluginStart()
 
 public OnMapStart() {
 
-	PrecacheGeneric("particles/burningplayer.pcf", true);
+	PrecacheGeneric("particles/burningplayer.pcf", true); //This may not be needed, but was at the recommendation to code changes seen in CS:GO.
+	isMVM = IsMVM();
 }
 
 //-----------------------------------------------------------------------------
@@ -85,6 +88,12 @@ public Action:Event_PlayerDeath(Handle:event, const String:name[], bool:dontBroa
 	
 	// Check if victim is a Pyro
 	new TFClassType:victimClass = TF2_GetPlayerClass(victim);
+	new team = GetClientTeam(victim);
+
+	if(isMVM){
+		if (team == 3) return Plugin_Continue;
+	}
+	
 	
 	if (victimClass == TFClass_Pyro || !IsValidClient(attacker) || !(GetEntityFlags(victim) & FL_ONGROUND)) //Will not fire if the victim is a pyro or died in the sky.
 	{}else if (GetConVarInt(sillyDeaths) == 0 && (victimClass == TFClass_Scout || victimClass == TFClass_DemoMan)){}else{ //For Silly deaths turned off
@@ -250,7 +259,19 @@ stock bool:IsValidClient(iClient)
 	}
 
 //-----------------------------------------------------------------------------
-// Purpose: Gives fire particles to anim models, code borrowed with permission from Flaminsarge
+// Purpose: Check if the mode running is MVM
+//-----------------------------------------------------------------------------
+
+stock bool:IsMVM()
+	{
+		new i = FindEntityByClassname(-1, "tf_logic_mann_vs_machine");
+		if (i > MaxClients && IsValidEntity(i))
+		return true;
+		return false;
+	}
+
+//-----------------------------------------------------------------------------
+// Purpose: Gives fire particles to anim models
 //-----------------------------------------------------------------------------
 
 stock bool:TE_SetupTFParticle(String:Name[],
